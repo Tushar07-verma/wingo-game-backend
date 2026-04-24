@@ -98,7 +98,7 @@ function updateCSVUserBalance(userId, amountChange) {
         const updatedLines = lines.slice(1).map(line => {
             if (!line.trim()) return line;
             const parts = line.split(',');
-            if (parts[0] === String(userId)) {
+            if (parts[0]?.trim() === String(userId).trim()) {
                 // parts[4] is the balance column
                 parts[4] = (parseFloat(parts[4] || 0) + parseFloat(amountChange)).toFixed(2);
             }

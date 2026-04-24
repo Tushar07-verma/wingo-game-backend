@@ -519,9 +519,12 @@
               </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-clock-rotate-left"></i> Live updates enabled</div>
-              <button class="btn btn-outline" style="width: auto; padding: 4px 12px; height: auto; font-size: 11px; border-radius: 8px;" onclick="refreshAdminDashboard()">
-                <i class="fa-solid fa-rotate"></i> Refresh
+              <div id="adminCloudStatus" style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px #ef4444;" id="adminCloudDot"></span>
+                <span id="adminCloudText">Cloud Offline (Local Mode)</span>
+              </div>
+              <button class="btn btn-outline" style="width: auto; padding: 4px 12px; height: auto; font-size: 11px; border-radius: 8px; border-color: var(--primary); color: var(--primary);" onclick="refreshAdminDashboard(true)">
+                <i class="fa-solid fa-cloud-arrow-down"></i> Sync Cloud
               </button>
             </div>
           </div>
@@ -2387,16 +2390,17 @@
           // Step 1: UI Feedback
           document.getElementById('rechargeStep2').style.display = 'none';
           document.getElementById('rechargeStep3').style.display = 'block';
-          document.getElementById('rechargeWaitMsg').innerHTML = '<b style="color: #fbbf24;">Validating...</b><br/>Sharing Request with Owner';
+          document.getElementById('rechargeWaitMsg').innerHTML = '<b style="color: #fbbf24;">Syncing with Cloud...</b><br/>Connecting to Admin Server';
           
-          showToast('Syncing with server...');
+          showToast('Attempting Server Sync...');
 
-          // Step 2: Hybrid Mode - Try Server, then Telegram
+          // Step 2: Cloud-First Attempt
           setTimeout(async () => {
               let success = false;
               let method = '';
 
-              if (isServerOnline) {
+              // ALWAYS try server first if API_URL exists
+              if (API_URL) {
                   try {
                       const res = await fetch(`${API_URL}/api/recharge`, {
                           method: 'POST',
@@ -2405,36 +2409,41 @@
                       });
                       if (res.ok) {
                           const data = await res.json();
-                          if(data.success) { success = true; method = 'SERVER'; }
+                          if(data.success) { 
+                            success = true; 
+                            method = 'SERVER'; 
+                            isServerOnline = true; // Implicitly online if this works
+                          }
                       }
-                  } catch(e) { console.warn("Recharge server call failed, trying Telegram..."); }
+                  } catch(e) { 
+                    console.warn("Cloud Sync failed, trying fallback methods...", e); 
+                  }
               }
 
               if (!success) {
-                  // SERVERLESS FALLBACK: Attempt Telegram Notification
+                  // Fallback to Telegram (if configured)
                   const tgSuccess = await sendTelegramNotification(rechargeData);
                   if (tgSuccess) {
                       success = true;
                       method = 'TELEGRAM';
                   }
                   
-                  // Always save locally for Simulation Mode
+                  // Always save locally as a redundant copy or for offline mode
                   let localRecharges = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
                   localRecharges.unshift(rechargeData);
                   localStorage.setItem('local_recharge_db', JSON.stringify(localRecharges.slice(0, 50)));
 
-                  // [FIX] In Full Offline Mode, local save IS success
                   if (!success) {
-                      success = true;
+                      success = true; // Mark as success because we saved locally at least
                       method = 'LOCAL';
                   }
               }
 
               if(success) {
                   let successMsg = '';
-                  if (method === 'SERVER') successMsg = 'Admin Panel updated';
+                  if (method === 'SERVER') successMsg = 'Admin Dashboard Updated (Cloud)';
                   else if (method === 'TELEGRAM') successMsg = 'Owner notified via Telegram';
-                  else successMsg = 'Shared in Local Simulation Mode';
+                  else successMsg = 'Saved in Local Simulation Mode';
 
                   document.getElementById('rechargeWaitMsg').innerHTML = `<b style="color: var(--primary);">SENT SUCCESSFULLY!</b><br/>${successMsg}`;
                   showToast(successMsg);
@@ -2444,12 +2453,11 @@
                       resetRechargeSteps();
                   }, 2500);
               } else {
-                  // This part should technically never be reached now, but kept for safety
                   showToast('Submission issue', true);
                   setTimeout(resetRechargeSteps, 4000);
               }
 
-          }, 1500); 
+          }, 1000); 
       }
 
 
@@ -3117,7 +3125,13 @@
       }
       
       // ================= ADMIN CONSOLE LOGIC =================
-      async function refreshAdminDashboard() {
+      async function refreshAdminDashboard(forceCloud = false) {
+        // Update Cloud Indicator UI
+        const cloudDot = document.getElementById('adminCloudDot');
+        const cloudText = document.getElementById('adminCloudText');
+        
+        if(forceCloud) showToast('Syncing with Railway Cloud...');
+
         // Load Telegram Settings into inputs
         if(document.getElementById('tgBotToken')) document.getElementById('tgBotToken').value = localStorage.getItem('tg_bot_token') || '';
         if(document.getElementById('tgChatId')) document.getElementById('tgChatId').value = localStorage.getItem('tg_chat_id') || '';
@@ -3131,42 +3145,73 @@
             let pendingRechargeCount = 0;
             let pendingRecharges = [];
 
-            if (isServerOnline) {
-                // Fetch latest users list for accurate Total Players and active lists
-                const userRes = await fetch(`${API_URL}/api/admin/users`);
-                adminUsers = await userRes.json();
-                totalUsers = adminUsers.length;
+            // If forced or currently online, try the server
+            if (isServerOnline || forceCloud) {
+                try {
+                    // Fetch latest users list for accurate Total Players and active lists
+                    const userRes = await fetch(`${API_URL}/api/admin/users`);
+                    if (!userRes.ok) throw new Error("Server unreachable");
+                    
+                    adminUsers = await userRes.json();
+                    totalUsers = adminUsers.length;
 
-                const revRes = await fetch(`${API_URL}/api/admin/revenue`);
-                const revData = await revRes.json();
-                commTotal = revData.totalCommission || 0;
+                    const revRes = await fetch(`${API_URL}/api/admin/revenue`);
+                    const revData = await revRes.json();
+                    commTotal = revData.totalCommission || 0;
 
-                const recRes = await fetch(`${API_URL}/api/admin/reports?type=recharge`);
-                const recharges = await recRes.json();
-                totalRechargeAmt = recharges.filter(r => r.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
-                pendingRechargeCount = recharges.filter(r => r.status === 'PENDING').length;
-                pendingRecharges = recharges.filter(r => r.status === 'PENDING');
+                    const recRes = await fetch(`${API_URL}/api/admin/reports?type=recharge`);
+                    const recharges = await recRes.json();
+                    totalRechargeAmt = recharges.filter(r => r.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
+                    pendingRechargeCount = recharges.filter(r => r.status === 'PENDING').length;
+                    pendingRecharges = recharges.filter(r => r.status === 'PENDING');
 
-                const wdRes = await fetch(`${API_URL}/api/admin/reports?type=withdraw`);
-                const withdrawals = await wdRes.json();
-                totalWithdrawApproved = withdrawals.filter(w => w.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
-                pendingWithdrawCount = withdrawals.filter(w => w.status === 'PENDING').length;
+                    const wdRes = await fetch(`${API_URL}/api/admin/reports?type=withdraw`);
+                    const withdrawals = await wdRes.json();
+                    totalWithdrawApproved = withdrawals.filter(w => w.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
+                    pendingWithdrawCount = withdrawals.filter(w => w.status === 'PENDING').length;
+
+                    // Update Indicator to ONLINE
+                    isServerOnline = true;
+                    if(cloudDot) { cloudDot.style.background = 'var(--primary)'; cloudDot.style.boxShadow = '0 0 8px var(--primary)'; }
+                    if(cloudText) cloudText.innerText = 'Cloud Sync: Active (Railway)';
+                    
+                    if(forceCloud) showToast('Cloud Data Synced successfully!');
+
+                } catch (serverErr) {
+                    console.warn("Admin server fetch failed, using local fallback", serverErr);
+                    isServerOnline = false;
+                    if(cloudDot) { cloudDot.style.background = '#ef4444'; cloudDot.style.boxShadow = '0 0 8px #ef4444'; }
+                    if(cloudText) cloudText.innerText = 'Cloud Offline (Using Local Backup)';
+                    
+                    // Fallback to local within this catch block
+                    const localUsers = JSON.parse(localStorage.getItem('local_users_db') || '[]');
+                    adminUsers = localUsers;
+                    totalUsers = localUsers.length;
+                    commTotal = parseFloat(localStorage.getItem('local_commission_total') || '0');
+                    const localRecharges = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
+                    totalRechargeAmt = localRecharges.filter(r => r.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
+                    pendingRechargeCount = localRecharges.filter(r => r.status === 'PENDING').length;
+                    pendingRecharges = localRecharges.filter(r => r.status === 'PENDING');
+                    const localWithdraws = JSON.parse(localStorage.getItem('local_withdraw_db') || '[]');
+                    totalWithdrawApproved = localWithdraws.filter(w => w.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
+                    pendingWithdrawCount = localWithdraws.filter(w => w.status === 'PENDING').length;
+                }
             } else {
-                // Offline Simulation Mode Fallback
+                // Known Offline Mode
                 const localUsers = JSON.parse(localStorage.getItem('local_users_db') || '[]');
                 adminUsers = localUsers;
                 totalUsers = localUsers.length;
-
                 commTotal = parseFloat(localStorage.getItem('local_commission_total') || '0');
-
                 const localRecharges = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
                 totalRechargeAmt = localRecharges.filter(r => r.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
                 pendingRechargeCount = localRecharges.filter(r => r.status === 'PENDING').length;
                 pendingRecharges = localRecharges.filter(r => r.status === 'PENDING');
-
                 const localWithdraws = JSON.parse(localStorage.getItem('local_withdraw_db') || '[]');
                 totalWithdrawApproved = localWithdraws.filter(w => w.status === 'SUCCESS').reduce((acc, curr) => acc + curr.amount, 0);
                 pendingWithdrawCount = localWithdraws.filter(w => w.status === 'PENDING').length;
+                
+                if(cloudDot) { cloudDot.style.background = '#ef4444'; cloudDot.style.boxShadow = '0 0 8px #ef4444'; }
+                if(cloudText) cloudText.innerText = 'Cloud Offline (Using Local Backup)';
             }
             
             const revenue = (totalRechargeAmt - totalWithdrawApproved) + commTotal;
