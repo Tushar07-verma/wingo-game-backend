@@ -486,6 +486,16 @@ app.post('/api/recharge', (req, res) => {
             return res.status(500).json({ error: 'Failed to save recharge' });
         }
         console.log(`[RECHARGE SUCCESS] Saved request ${id} to database.`);
+        
+        // Notify all admins in real-time via Socket.io
+        io.emit('admin_notification', { 
+            type: 'recharge', 
+            userId, 
+            userName, 
+            amount, 
+            message: `New Recharge Request: ₹${amount}` 
+        });
+
         res.status(200).json({ success: true, id });
     });
 });
@@ -659,6 +669,10 @@ app.post('/api/admin/update-transaction', (req, res) => {
         if (type === 'withdraw' && status === 'FAILED') {
             updateCSVUserBalance(userId, amount);
         }
+
+        // Notify all admins and the specific user about the transaction update
+        io.emit('admin_notification', { type, status, id });
+        io.emit('transaction_update', { userId, type, status, id });
 
         res.status(200).json({ success: true });
     });

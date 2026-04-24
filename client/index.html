@@ -1399,6 +1399,24 @@
         console.warn('Server Disconnected!');
       });
 
+      // Admin Real-time Sync
+      socket.on('admin_notification', (data) => {
+          console.log("Admin Sync Signal Received:", data);
+          if (document.getElementById('view-admin-dashboard').classList.contains('active')) {
+              refreshAdminDashboard();
+              if (data.message) showToast(data.message);
+          }
+      });
+      
+      // User Transaction Real-time Sync
+      socket.on('transaction_update', (data) => {
+          if (userData && userData.id == data.userId) {
+              showToast(`Your ${data.type} request was updated to ${data.status}!`);
+              updateHistoryFromServer();
+              updateMyHistory();
+          }
+      });
+
       // Local Active Countdown — respects selected mode duration
       setInterval(() => {
         if (!socketConnected) {
@@ -3743,8 +3761,15 @@
         }
       }
 
-      // Auto-update history on load
+      // Auto-update history and admin dashboard on interval
       setTimeout(updateHistoryFromServer, 500);
+      
+      // Backup Admin Auto-Refresh (Every 10 seconds)
+      setInterval(() => {
+          if (document.getElementById('view-admin-dashboard').classList.contains('active') && isServerOnline) {
+              refreshAdminDashboard();
+          }
+      }, 10000);
     </script>
     <script src="landing.js"></script>
   </body>
