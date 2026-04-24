@@ -1759,8 +1759,8 @@
         // phone must be 10 digits, no symbols
         if(!/^\d{10}$/.test(phoneNumber)) return showToast('Phone Number must be exactly 10 digits (0-9 only)', true);
         
-        // password must be 6 digits
-        if(!/^\d{6}$/.test(password)) return showToast('Password must be exactly 6 digits', true);
+        // password must be 4-12 digits
+        if(!/^\d{4,12}$/.test(password)) return showToast('Password must be between 4-12 digits', true);
         
         if(password !== confirm) return showToast('Passwords do not match', true);
 
@@ -1835,7 +1835,7 @@
         
         // Strict Validation (Matching Premium Standard)
         if(!/^\d{10}$/.test(phoneNumber)) return showToast('Phone must be 10 digits', true);
-        if(!/^\d{6,8}$/.test(password)) return showToast('Password must be 6-8 digits', true);
+        if(!/^\d{4,12}$/.test(password)) return showToast('Password must be 4-12 digits', true);
 
         const localUsers = JSON.parse(localStorage.getItem('local_users_db') || '[]');
         

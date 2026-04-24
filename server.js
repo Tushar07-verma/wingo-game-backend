@@ -240,8 +240,10 @@ app.post('/api/register', (req, res) => {
 
         // 2. Create new user entry
         const initialBalance = 0;
-        const userRole = role || 'USER';
-        const newEntry = `${id || Date.now()},${phoneNumber},${password},${userRole},${initialBalance},${createdAt || new Date().toISOString()}\n`;
+        const userRole = (role || 'USER').trim();
+        const safePhone = String(phoneNumber).trim();
+        const safePass = String(password).trim();
+        const newEntry = `${id || Date.now()},${safePhone},${safePass},${userRole},${initialBalance},${createdAt || new Date().toISOString()}\n`;
 
         // 3. Append to CSV
         fs.appendFile(CSV_FILE_PATH, newEntry, (err) => {
@@ -249,7 +251,7 @@ app.post('/api/register', (req, res) => {
                 console.error('Failed to write to CSV:', err);
                 return res.status(500).json({ error: 'Failed to save user data on server' });
             }
-            console.log(`[SUCCESS] New user appended: ${phoneNumber}`);
+            console.log(`[SUCCESS] New user appended: ${safePhone}`);
             res.status(200).json({ success: true, message: 'User stored successfully' });
         });
     } catch (err) {
@@ -275,12 +277,17 @@ app.post('/api/login', (req, res) => {
             const lines = data.trim().split('\n');
             if (lines.length <= 1) return res.status(401).json({ error: 'User not found' });
 
+            const incomingPhone = String(phoneNumber).trim();
+            const incomingPass = String(password).trim();
+
             const userLine = lines.slice(1).find(line => {
                 const parts = line.split(',');
-                return parts[1] === String(phoneNumber).trim() && parts[2] === String(password).trim();
+                // Ensure all CSV parts are trimmed for comparison
+                return String(parts[1]).trim() === incomingPhone && String(parts[2]).trim() === incomingPass;
             });
 
             if (!userLine) {
+                console.warn(`[AUTH] Login failed: No match for ${incomingPhone}`);
                 return res.status(401).json({ error: 'Invalid phone number or password' });
             }
 

@@ -60,20 +60,73 @@ window.showLandingAuth = function() {
 // Global functions for Landing Auth
 window.handleLandingAuth = async function() {
     const phone = document.getElementById('landing-reg-user').value.trim();
-    const pass = document.getElementById('landing-reg-pass').value;
+    const pass = document.getElementById('landing-reg-pass').value.trim();
     
     if (!phone || !pass) {
         return showToast('Please enter your details to register', true);
     }
 
-    // Pre-fill the login fields for convenience
-    const loginUserField = document.getElementById('loginUsername');
-    const loginPassField = document.getElementById('loginPassword');
-    if (loginUserField) loginUserField.value = phone;
-    // We can also pre-fill password if we want, but let's just do the phone as requested
-    
-    // Switch to the main login view as requested
-    if (typeof switchView === 'function') {
+    // Standard Validation
+    if(!/^\d{10}$/.test(phone)) {
+        return showToast('Phone number must be exactly 10 digits', true);
+    }
+    if(pass.length < 4 || pass.length > 12) {
+        return showToast('Password must be between 4-12 characters', true);
+    }
+
+    showToast('Creating your account...');
+
+    try {
+        // 1. Prepare User Data (Consistent with index.html)
+        const newUser = {
+            id: Date.now(),
+            phoneNumber: phone,
+            password: pass,
+            name: phone,
+            balance: 0,
+            role: 'USER',
+            createdAt: new Date().toISOString()
+        };
+
+        // 2. Save Locally (Mirror logic from index.html)
+        let localUsers = JSON.parse(localStorage.getItem('local_users_db') || '[]');
+        if(!localUsers.some(u => u.phoneNumber === phone)) {
+            localUsers.push(newUser);
+            localStorage.setItem('local_users_db', JSON.stringify(localUsers));
+        }
+
+        // 3. Register on Server
+        const res = await fetch(`${API_URL}/api/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newUser)
+        });
+
+        if (res.status === 409) {
+            showToast('Account already exists. Logging you in...');
+        } else if (!res.ok) {
+            throw new Error("Registration failed");
+        } else {
+            showToast('Registration Successful!');
+        }
+
+        // 4. Auto-Login Flow
+        const loginUserField = document.getElementById('loginUsername');
+        const loginPassField = document.getElementById('loginPassword');
+        if (loginUserField) loginUserField.value = phone;
+        if (loginPassField) loginPassField.value = pass;
+        
+        // Use the global login function from index.html
+        if (typeof loginUser === 'function') {
+            await loginUser();
+        } else {
+            // Fallback if loginUser isn't found
+            switchView('view-user-login');
+        }
+
+    } catch (err) {
+        console.error("Landing Auth Error:", err);
+        showToast('Registration issue, but you can try logging in.', true);
         switchView('view-user-login');
     }
 }
