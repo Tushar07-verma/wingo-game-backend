@@ -498,17 +498,22 @@ app.get('/api/recharge/my', (req, res) => {
 
     fs.readFile(RECHARGES_FILE_PATH, 'utf8', (err, data) => {
         if (err) return res.status(200).json([]);
-        const lines = data.trim().split('\n').slice(1);
+        // Remove \r and split by \n
+        const lines = data.replace(/\r/g, '').trim().split('\n').slice(1);
         const myRecharges = lines
             .map(line => {
                 const parts = line.split(',');
                 return {
-                    id: parts[0], userId: parts[1], userName: parts[2],
-                    amount: parseFloat(parts[3]), upiId: parts[4],
-                    status: parts[5], timestamp: parts[6]
+                    id: parts[0]?.trim(), 
+                    userId: parts[1]?.trim(), 
+                    userName: parts[2]?.trim(),
+                    amount: parseFloat(parts[3] || 0), 
+                    upiId: parts[4]?.trim(),
+                    status: parts[5]?.trim(), 
+                    timestamp: parts[6]?.trim()
                 };
             })
-            .filter(r => r.userId === userId)
+            .filter(r => String(r.userId) === String(userId))
             .reverse();
         res.status(200).json(myRecharges);
     });
@@ -553,13 +558,18 @@ app.get('/api/admin/reports', (req, res) => {
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) return res.status(200).json([]);
-        const lines = data.trim().split('\n').slice(1);
+        // Handle line endings and empty lines
+        const lines = data.replace(/\r/g, '').trim().split('\n').slice(1);
         const reports = lines.map(line => {
             const parts = line.split(',');
             return {
-                id: parts[0], userId: parts[1], userName: parts[2],
-                amount: parseFloat(parts[3]), upiId: parts[4],
-                status: parts[5], timestamp: parts[6]
+                id: parts[0]?.trim(), 
+                userId: parts[1]?.trim(), 
+                userName: parts[2]?.trim(),
+                amount: parseFloat(parts[3] || 0), 
+                upiId: parts[4]?.trim(),
+                status: parts[5]?.trim(), 
+                timestamp: parts[6]?.trim()
             };
         });
         res.status(200).json(reports);
@@ -628,12 +638,12 @@ app.post('/api/admin/update-transaction', (req, res) => {
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) return res.status(500).json({ error: 'File read error' });
-        const lines = data.split('\n');
+        const lines = data.replace(/\r/g, '').split('\n');
         const header = lines[0];
         const updatedLines = lines.slice(1).map(line => {
             if (!line.trim()) return line;
             const parts = line.split(',');
-            if (parts[0] === id) {
+            if (parts[0]?.trim() === id) {
                 parts[5] = status; // Update status column
             }
             return parts.join(',');

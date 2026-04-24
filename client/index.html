@@ -1954,7 +1954,7 @@
       }
 
       function exportPaymentsCSV() {
-        const recharges = JSON.parse(localStorage.getItem('local_recharges_db') || '[]');
+        const recharges = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
         const withdrawals = JSON.parse(localStorage.getItem('local_withdraw_db') || '[]');
         
         let csvContent = "data:text/csv;charset=utf-8,Type,Payment ID,User,Amount,UPI ID,Status,Date\n";
