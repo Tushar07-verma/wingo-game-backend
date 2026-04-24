@@ -1,5 +1,5 @@
 # Node.js
-# node_modules/
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -37,6 +37,10 @@ Thumbs.db
 # /server/prisma/migrations/
 
 # Logs
-# /server/database/history.csv
 logs/
 *.log
+
+# Database
+database/*.csv
+database/*.json
+database/*.txt
