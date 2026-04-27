@@ -1,12 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Wingo Game - Premium Betting</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="landing.css">
@@ -152,13 +146,18 @@
       .modal-overlay { 
         position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
         background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); 
-        display: none; align-items: center; justify-content: center; 
+        display: none;
+        align-items: flex-start;
+        justify-content: center; 
         z-index: 1000; opacity: 0; transition: opacity 0.2s; 
-        pointer-events: none; /* Block-proof by default */
+        pointer-events: none;
+        overflow-y: auto;
+        padding: 10px 0 24px;
+        box-sizing: border-box;
       }
       .modal-overlay.show { 
         display: flex; opacity: 1; 
-        pointer-events: auto; /* Active when showing */
+        pointer-events: auto;
       }
       
       /* Global Touch Optimization */
@@ -169,11 +168,11 @@
         -webkit-user-select: none;
       }
       
-      .modal-content { background: var(--bg-main); width: 90%; max-width: 380px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.2s; overflow: hidden; }
+      .modal-content { background: var(--bg-main); width: 90%; max-width: 380px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(10px); transition: transform 0.2s; overflow: visible; max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
       .modal-overlay.show .modal-content { transform: translateY(0); }
-      .modal-header { padding: 16px 20px; text-align: center; font-weight: 700; font-size: 18px; color: white; border-bottom: 1px solid rgba(255,255,255,0.05); }
-      .modal-body { padding: 20px; }
-      .modal-footer { display: flex; border-top: 1px solid rgba(255,255,255,0.05); }
+      .modal-header { padding: 14px 20px; text-align: center; font-weight: 700; font-size: 18px; color: white; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; border-radius: 20px 20px 0 0; overflow: hidden; }
+      .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+      .modal-footer { display: flex; border-top: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; border-radius: 0 0 20px 20px; overflow: hidden; }
       .modal-btn { flex: 1; padding: 16px; border: none; background: transparent; color: white; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s; }
       .modal-btn.cancel { color: var(--text-muted); border-right: 1px solid rgba(255,255,255,0.05); }
       .modal-btn.confirm { color: var(--primary); }
@@ -891,9 +890,9 @@
 
       <!-- Recharge Modal (Updated for UPI Deep Link) -->
       <div id="rechargeModal" class="modal-overlay">
-        <div class="modal-content">
-          <div class="modal-header" style="background: rgba(16, 185, 129, 0.2)">Recharge Account</div>
-          <div class="modal-body" id="rechargeModalBody">
+        <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
+          <div class="modal-header" style="background: rgba(16, 185, 129, 0.2); flex-shrink: 0;">Recharge Account</div>
+          <div class="modal-body" id="rechargeModalBody" style="overflow-y: auto; flex: 1;">
             <div id="rechargeStep1">
               <div class="input-group">
                 <label>Enter Amount (₹)</label>
@@ -909,24 +908,40 @@
             </div>
             
             <div id="rechargeStep2" style="display: none; text-align: center;">
-              <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--primary);">
-                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Paying Amount</p>
-                <h2 id="finalRechargeAmount" style="font-size: 28px; font-weight: 800;">₹ 1000</h2>
-              </div>
-              
-              <div style="margin-bottom: 15px; display: flex; justify-content: center;">
-                <div style="background: white; padding: 10px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <img id="rechargeQRCode" src="" alt="UPI QR Code" style="width: 150px; height: 150px; display: block;">
+              <!-- Amount + QR side by side on one row -->
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div style="flex: 1; background: rgba(16, 185, 129, 0.1); padding: 10px 8px; border-radius: 12px; border: 1px dashed var(--primary);">
+                  <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">Paying</p>
+                  <h2 id="finalRechargeAmount" style="font-size: 22px; font-weight: 800; margin: 0;">₹ 1000</h2>
+                </div>
+                <div style="background: white; padding: 7px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;">
+                  <img id="rechargeQRCode" src="" alt="UPI QR Code" style="width: 100px; height: 100px; display: block;">
                 </div>
               </div>
 
-              <p style="font-size: 11px; color: #fbbf24; margin-bottom: 20px; font-weight: 600;">Scan this QR code from any UPI app to pay, then click confirm below.</p>
+              <p style="font-size: 11px; color: #fbbf24; margin-bottom: 10px; font-weight: 600;">📱 Scan QR from any UPI app to pay, then confirm below.</p>
               
-              <div style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.2); border-radius:12px; padding:10px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:11px; color:var(--text-muted);">Already paid? Track your request:</span>
-                  <button class="btn btn-outline" style="width:auto; padding:6px 12px; font-size:10px;" onclick="openRechargeHistory()">History</button>
+              <div style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.2); border-radius:10px; padding:8px 10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:11px; color:var(--text-muted);">Already paid? Track:</span>
+                  <button class="btn btn-outline" style="width:auto; padding:5px 10px; font-size:10px;" onclick="openRechargeHistory()">History</button>
               </div>
-              <button class="btn btn-primary" onclick="submitRechargeUPI()">Confirm Payment</button>
+              <button class="btn btn-primary" onclick="submitRechargeUPI()">✅ Confirm Payment</button>
+              <button onclick="handleRechargeCancel()" style="
+                width: 100%;
+                margin-top: 10px;
+                padding: 13px;
+                border-radius: 14px;
+                border: 1.5px solid rgba(239,68,68,0.5);
+                background: rgba(239,68,68,0.08);
+                color: #ef4444;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                letter-spacing: 0.3px;
+                transition: background 0.2s;
+              " onmouseover="this.style.background='rgba(239,68,68,0.18)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+                ✕ Cancel
+              </button>
             </div>
 
 
@@ -941,7 +956,7 @@
 
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer" style="flex-shrink: 0;">
             <button class="modal-btn cancel" onclick="handleRechargeCancel()">Cancel</button>
           </div>
         </div>
@@ -1821,17 +1836,15 @@
             });
             
             if (res.status === 409) {
-                showToast('Account already exists in server. Try logging in.', true);
-                document.getElementById('loginUsername').value = phoneNumber;
-                setTimeout(() => switchView('view-user-login'), 1500);
-                return;
+                // User already exists on server - still log them in
+                showToast('Registration Successful! Logging you in...');
+            } else if (!res.ok) throw new Error("Server registration failed");
+            else {
+                showToast('Registration Successful!');
             }
-            
-            if (!res.ok) throw new Error("Server registration failed");
-            showToast('Registration Sync Complete');
         } catch (e) { 
             console.warn("Server Registration Failed. User saved locally.", e);
-            showToast('Registered Locally (Offline Mode)');
+            showToast('Registration Successful!');
         }
 
         // Finalize Form
@@ -2490,39 +2503,17 @@
 
 
 
-      async function handleRechargeCancel() {
-          const step2 = document.getElementById('rechargeStep2');
-          const isStep2Active = step2 && step2.style.display === 'block';
-          
-          if (isStep2Active && userData) {
-              const amt = parseFloat(document.getElementById('rechargeAmount').value);
-              const rechargeData = {
-                  userId: userData.id,
-                  userName: userData.name,
-                  amount: amt,
-                  upiId: 'Closed without confirm',
-                  status: 'PENDING',
-                  timestamp: new Date().toISOString(),
-                  id: 'REC' + Date.now()
-              };
-
-              // Background sync - don't block UI
-              if (isServerOnline) {
-                  fetch(`${API_URL}/api/recharge`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(rechargeData)
-                  }).then(() => showToast('Request sent for verification.'))
-                    .catch(e => console.warn("Cancel sync failed", e));
-              } else {
-                  let localRecharges = JSON.parse(localStorage.getItem('local_recharge_db') || '[]');
-                  localRecharges.unshift(cancelData);
-                  localStorage.setItem('local_recharge_db', JSON.stringify(localRecharges.slice(0, 50)));
-              }
+      function handleRechargeCancel() {
+          // Simply close the modal and reset — user did not confirm payment
+          try {
+              closeModal('rechargeModal');
+              resetRechargeSteps();
+          } catch(e) {
+              // Fallback: force close
+              const modal = document.getElementById('rechargeModal');
+              if (modal) modal.classList.remove('show');
+              resetRechargeSteps();
           }
-
-          closeModal('rechargeModal');
-          resetRechargeSteps();
       }
 
       async function updateWalletRecentTransactions() {
@@ -3410,12 +3401,13 @@
                   </td>
                   <td style="font-weight: bold; color: var(--primary);">₹ ${r.amount}</td>
                   <td style="padding: 12px 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
                     ${r.status === 'PENDING' 
-                      ? `<div style="display:flex; flex-direction:column; gap:6px;">
-                           <button class="btn btn-primary" style="padding: 6px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'SUCCESS', '${r.userId}', ${r.amount})">Accept</button>
-                           <button class="btn btn-danger" style="padding: 6px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'FAILED', '${r.userId}', ${r.amount})">Reject</button>
-                         </div>` 
+                      ? `<button class="btn btn-primary" style="padding: 5px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'SUCCESS', '${r.userId}', ${r.amount})">✅ Accept</button>
+                         <button class="btn btn-danger" style="padding: 5px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${r.id}', 'recharge', 'FAILED', '${r.userId}', ${r.amount})">❌ Reject</button>` 
                       : `<span style="font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${r.status === 'SUCCESS' ? 'var(--primary)' : 'var(--color-red)'}">${r.status}</span>`}
+                    <button onclick="deleteRechargeRecord('${r.id}', '${r.userId}', '${r.userName || r.userId}')" style="margin-top:2px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:var(--color-red); border-radius:6px; padding:4px 6px; font-size:9px; cursor:pointer; font-weight:700;">🗑️ Remove</button>
+                    </div>
                   </td>
                 </tr>
             `).join('');
@@ -3429,12 +3421,13 @@
                   </td>
                   <td style="font-weight: bold; color: var(--color-red);">₹ ${w.amount}</td>
                   <td style="padding: 12px 8px;">
+                    <div style="display:flex; flex-direction:column; gap:6px;">
                     ${w.status === 'PENDING' 
-                      ? `<div style="display:flex; flex-direction:column; gap:6px;">
-                           <button class="btn btn-primary" style="padding: 6px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'SUCCESS', '${w.userId}', ${w.amount})">Accept</button>
-                           <button class="btn btn-danger" style="padding: 6px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'FAILED', '${w.userId}', ${w.amount})">Reject</button>
-                         </div>` 
+                      ? `<button class="btn btn-primary" style="padding: 5px; font-size: 10px; height: auto; background: var(--primary); color:#000; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'SUCCESS', '${w.userId}', ${w.amount})">✅ Accept</button>
+                         <button class="btn btn-danger" style="padding: 5px; font-size: 10px; height: auto; font-weight:800;" onclick="handleAdminAction('${w.id}', 'withdraw', 'FAILED', '${w.userId}', ${w.amount})">❌ Reject</button>` 
                       : `<span style="font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${w.status === 'SUCCESS' ? 'var(--primary)' : 'var(--color-red)'}">${w.status}</span>`}
+                    <button onclick="deleteWithdrawRecord('${w.id}', '${w.userId}', '${w.userName || w.userId}')" style="margin-top:2px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:var(--color-red); border-radius:6px; padding:4px 6px; font-size:9px; cursor:pointer; font-weight:700;">🗑️ Remove</button>
+                    </div>
                   </td>
                 </tr>
             `).join('');
@@ -3491,6 +3484,80 @@
       }
 
 
+
+      // ===== DELETE RECHARGE RECORD (Admin) =====
+      async function deleteRechargeRecord(recordId, userId, userName) {
+          const choice = confirm(`"OK" dabao = SIRF YEH 1 entry delete karo\n"Cancel" dabao = ${userName} ki POORI recharge history delete karo`);
+          if (choice === null) return; // Cancelled entirely via Escape — but JS confirm can't differentiate easily, use two confirms instead:
+          
+          // Use two separate confirms for clarity
+          const deleteSingle = confirm(`Kya SIRF yeh 1 entry delete karni hai?\nOK = Sirf 1 record\nCancel = Is user (${userName}) ki POORI history`);
+          if (!confirm(`Pakka? Yeh action undo nahi ho sakta!`)) return;
+
+          const params = deleteSingle 
+              ? `?id=${encodeURIComponent(recordId)}`
+              : `?userId=${encodeURIComponent(userId)}`;
+          
+          try {
+              const res = await fetch(`${API_URL}/api/admin/delete-recharge${params}`, { method: 'DELETE' });
+              const data = await res.json();
+              if (data.success) {
+                  showToast(`${data.deleted} recharge record(s) delete ho gaya! ✅`);
+              } else {
+                  showToast('Server delete fail — local se hata raha hoon...', true);
+              }
+          } catch(e) {
+              showToast('Offline mode — local se delete ho raha hai', true);
+          }
+
+          // LocalStorage cleanup bhi karo
+          const dbKey = 'local_recharge_db';
+          let localDB = JSON.parse(localStorage.getItem(dbKey) || '[]');
+          if (deleteSingle) {
+              localDB = localDB.filter(r => r.id !== recordId);
+          } else {
+              localDB = localDB.filter(r => String(r.userId) !== String(userId));
+          }
+          localStorage.setItem(dbKey, JSON.stringify(localDB));
+
+          openAdminReportsModal('recharge');
+          refreshAdminDashboard();
+      }
+
+      // ===== DELETE WITHDRAWAL RECORD (Admin) =====
+      async function deleteWithdrawRecord(recordId, userId, userName) {
+          const deleteSingle = confirm(`Kya SIRF yeh 1 withdrawal entry delete karni hai?\nOK = Sirf 1 record\nCancel = Is user (${userName}) ki POORI withdrawal history`);
+          if (!confirm(`Pakka? Yeh action undo nahi ho sakta!`)) return;
+
+          const params = deleteSingle
+              ? `?id=${encodeURIComponent(recordId)}`
+              : `?userId=${encodeURIComponent(userId)}`;
+
+          try {
+              const res = await fetch(`${API_URL}/api/admin/delete-withdraw${params}`, { method: 'DELETE' });
+              const data = await res.json();
+              if (data.success) {
+                  showToast(`${data.deleted} withdrawal record(s) delete ho gaya! ✅`);
+              } else {
+                  showToast('Server delete fail — local se hata raha hoon...', true);
+              }
+          } catch(e) {
+              showToast('Offline mode — local se delete ho raha hai', true);
+          }
+
+          // LocalStorage cleanup
+          const dbKey = 'local_withdraw_db';
+          let localDB = JSON.parse(localStorage.getItem(dbKey) || '[]');
+          if (deleteSingle) {
+              localDB = localDB.filter(r => r.id !== recordId);
+          } else {
+              localDB = localDB.filter(r => String(r.userId) !== String(userId));
+          }
+          localStorage.setItem(dbKey, JSON.stringify(localDB));
+
+          openAdminReportsModal('withdraw');
+          refreshAdminDashboard();
+      }
 
       function approveRecharge(rechargeId, userId, amount) {
           if(!confirm(`Approve ₹${amount} for User ${userId}?`)) return;

@@ -678,6 +678,66 @@ app.post('/api/admin/update-transaction', (req, res) => {
     });
 });
 
+// Admin: Delete recharge record(s)
+// DELETE /api/admin/delete-recharge?id=REC123      → single record delete karo
+// DELETE /api/admin/delete-recharge?userId=101     → us user ki poori history delete karo
+app.delete('/api/admin/delete-recharge', (req, res) => {
+    const { id, userId } = req.query;
+    if (!id && !userId) return res.status(400).json({ error: 'id ya userId dena zaroori hai' });
+
+    try {
+        const raw = fs.readFileSync(RECHARGES_FILE_PATH, 'utf8');
+        const lines = raw.replace(/\r/g, '').split('\n');
+        const header = lines[0];
+        const dataLines = lines.slice(1).filter(l => l.trim());
+
+        let deleted = 0;
+        const remaining = dataLines.filter(line => {
+            const parts = line.split(',');
+            if (id && parts[0]?.trim() === String(id).trim()) { deleted++; return false; }
+            if (userId && parts[1]?.trim() === String(userId).trim()) { deleted++; return false; }
+            return true;
+        });
+
+        fs.writeFileSync(RECHARGES_FILE_PATH, header + '\n' + remaining.join('\n') + (remaining.length ? '\n' : ''));
+        console.log(`[ADMIN DELETE] ${deleted} recharge record(s) removed (id=${id}, userId=${userId})`);
+        res.json({ success: true, deleted });
+    } catch (e) {
+        console.error('Delete Recharge Error:', e);
+        res.status(500).json({ error: 'Delete fail ho gaya' });
+    }
+});
+
+// Admin: Delete withdrawal record(s)
+// DELETE /api/admin/delete-withdraw?id=WD123      → single record delete karo
+// DELETE /api/admin/delete-withdraw?userId=101    → us user ki poori withdrawal history delete karo
+app.delete('/api/admin/delete-withdraw', (req, res) => {
+    const { id, userId } = req.query;
+    if (!id && !userId) return res.status(400).json({ error: 'id ya userId dena zaroori hai' });
+
+    try {
+        const raw = fs.readFileSync(WITHDRAWALS_FILE_PATH, 'utf8');
+        const lines = raw.replace(/\r/g, '').split('\n');
+        const header = lines[0];
+        const dataLines = lines.slice(1).filter(l => l.trim());
+
+        let deleted = 0;
+        const remaining = dataLines.filter(line => {
+            const parts = line.split(',');
+            if (id && parts[0]?.trim() === String(id).trim()) { deleted++; return false; }
+            if (userId && parts[1]?.trim() === String(userId).trim()) { deleted++; return false; }
+            return true;
+        });
+
+        fs.writeFileSync(WITHDRAWALS_FILE_PATH, header + '\n' + remaining.join('\n') + (remaining.length ? '\n' : ''));
+        console.log(`[ADMIN DELETE] ${deleted} withdrawal record(s) removed (id=${id}, userId=${userId})`);
+        res.json({ success: true, deleted });
+    } catch (e) {
+        console.error('Delete Withdraw Error:', e);
+        res.status(500).json({ error: 'Delete fail ho gaya' });
+    }
+});
+
 // Admin API to get/set UPI ID
 app.get('/api/admin/upi', (req, res) => {
     try {
